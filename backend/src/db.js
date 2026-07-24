@@ -14,8 +14,12 @@ const init = async () => {
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'General',
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+  await pool.query(`
+    ALTER TABLE posts ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'General'
   `);
 };
 

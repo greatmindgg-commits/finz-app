@@ -5,6 +5,8 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 5000;
 
+const CATEGORIES = ["Markets", "Investing", "Personal Finance", "Crypto", "Economy", "General"];
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "finz-app API is alive" });
 });
@@ -15,11 +17,12 @@ app.get("/api/posts", async (req, res) => {
 });
 
 app.post("/api/posts", async (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, category } = req.body;
   if (!title || !content) return res.status(400).json({ error: "title and content required" });
+  const cat = CATEGORIES.includes(category) ? category : "General";
   const result = await pool.query(
-    "INSERT INTO posts (title, content) VALUES ($1, $2) RETURNING *",
-    [title, content]
+    "INSERT INTO posts (title, content, category) VALUES ($1, $2, $3) RETURNING *",
+    [title, content, cat]
   );
   res.status(201).json(result.rows[0]);
 });

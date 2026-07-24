@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finz — Personal Finance & Markets Blog</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: Georgia, serif; color: #1a2332; background: #f7f6f2; }
+  header { background: #0d1b2a; color: #fff; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header .logo { font-size: 24px; font-weight: bold; letter-spacing: 1px; }
+  header .logo span { color: #d4af37; }
+  .hero { background: linear-gradient(135deg, #0d1b2a, #1b3a5c); color: #fff; text-align: center; padding: 56px 24px; }
+  .hero h1 { font-size: 34px; margin-bottom: 10px; }
+  .hero p { color: #cdd7e4; font-size: 17px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+  .chip { border: 1px solid #0d1b2a; border-radius: 999px; padding: 6px 16px; cursor: pointer; background: #fff; font-size: 14px; }
+  .chip.active { background: #0d1b2a; color: #fff; }
+  .card { background: #fff; border: 1px solid #e3e0d8; border-radius: 10px; padding: 20px; margin: 14px 0; }
+  .card .cat { display: inline-block; background: #d4af37; color: #0d1b2a; font-size: 12px; font-weight: bold; border-radius: 4px; padding: 2px 10px; margin-bottom: 8px; }
+  .card h2 { font-size: 21px; margin-bottom: 6px; }
+  .card p { line-height: 1.6; color: #3c4a5d; white-space: pre-wrap; }
+  .card .meta { color: #8a93a0; font-size: 12px; margin-top: 10px; }
+  .publish { background: #fff; border: 2px solid #0d1b2a; border-radius: 10px; padding: 20px; margin: 26px 0; }
+  .publish h3 { margin-bottom: 10px; }
+  input, textarea, select { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #c9c5ba; border-radius: 6px; font-family: inherit; font-size: 15px; }
+  textarea { min-height: 120px; }
+  button { background: #0d1b2a; color: #fff; border: 0; border-radius: 6px; padding: 11px 22px; font-size: 15px; cursor: pointer; margin-top: 6px; }
+  button:hover { background: #1b3a5c; }
+  footer { background: #0d1b2a; color: #9fb0c3; text-align: center; padding: 26px 16px; font-size: 13px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Finz<span>.</span></div>
+  <div>Markets • Investing • Personal Finance</div>
+</header>
+
+<div class="hero">
+  <h1>Money, explained clearly.</h1>
+  <p>Practical writing on markets, investing and personal finance — no jargon, no hype.</p>
+</div>
+
+<div class="wrap">
+  <div class="chips" id="chips"></div>
+  <div id="posts"></div>
+
+  <div class="publish">
+    <h3>Write a post</h3>
+    <input id="title" placeholder="Title — e.g. Why emergency funds beat credit cards">
+    <select id="category"></select>
+    <textarea id="content" placeholder="Your article..."></textarea>
+    <button onclick="createPost()">Publish</button>
+  </div>
+</div>
+
+<footer>
+  Finz is an independent blog for general information only — nothing here is financial advice.<br>
+  Do your own research or speak to a regulated adviser before making financial decisions.<br>
+  © 2026 Finz. Built by Mathew Adegoke.
+</footer>
+
+<script>
+  const CATEGORIES = ["All", "Markets", "Investing", "Personal Finance", "Crypto", "Economy", "General"];
+  let activeCat = "All";
+  let allPosts = [];
+
+  function renderChips() {
+    const box = document.getElementById("chips");
+    box.innerHTML = "";
+    CATEGORIES.forEach(c => {
+      const el = document.createElement("div");
+      el.className = "chip" + (c === activeCat ? " active" : "");
+      el.textContent = c;
+      el.onclick = () => { activeCat = c; renderChips(); renderPosts(); };
+      box.appendChild(el);
+    });
+    const sel = document.getElementById("category");
+    if (!sel.options.length) CATEGORIES.slice(1).forEach(c => {
+      const o = document.createElement("option");
+      o.value = c; o.textContent = c;
+      sel.appendChild(o);
+    });
+  }
+
+  function renderPosts() {
+    const box = document.getElementById("posts");
+    box.innerHTML = "";
+    const posts = activeCat === "All" ? allPosts : allPosts.filter(p => p.category === activeCat);
+    if (!posts.length) { box.innerHTML = "<p style='color:#8a93a0'>No posts in this category yet.</p>"; return; }
+    posts.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = p.category;
+      const h2 = document.createElement("h2"); h2.textContent = p.title;
+      const body = document.createElement("p"); body.textContent = p.content;
+      const meta = document.createElement("div"); meta.className = "meta";
+      meta.textContent = "#" + p.id + " • " + new Date(p.created_at).toLocaleString();
+      card.append(cat, h2, body, meta);
+      box.appendChild(card);
+    });
+  }
+
+  async function loadPosts() {
+    const res = await fetch("/api/posts");
+    allPosts = await res.json();
+    renderPosts();
+  }
+
+  async function createPost() {
+    const title = document.getElementById("title").value.trim();
+    const content = document.getElementById("content").value.trim();
+    const category = document.getElementById("category").value;
+    if (!title || !content) return alert("Title and article are both required.");
+    await fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, content, category })
+    });
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+    loadPosts();
+  }
+
+  renderChips();
+  loadPosts();
+</script>
+</body>
+</html>
