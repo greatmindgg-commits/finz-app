@@ -159,6 +159,9 @@ kind: Service
 metadata:
   name: finz-frontend
   namespace: finz
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
 spec:
   type: LoadBalancer
   selector: { app: finz-frontend }
