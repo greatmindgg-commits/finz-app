@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: finz_user
+      POSTGRES_PASSWORD: finz_pass_2026
+      POSTGRES_DB: finz_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finz_user -d finz_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      PORT: "5000"
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: finz_user
+      DB_PASSWORD: finz_pass_2026
+      DB_NAME: finz_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8000:8080"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
