@@ -64,3 +64,31 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  update-manifest:
+    runs-on: ubuntu-latest
+    needs: build-scan-push
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get short commit SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Stamp new image tags into manifest
+        run: |
+          TAG=${{ steps.sha.outputs.short }}
+          sed -i "s|image: ghcr.io/.*/finz-backend:.*|image: ghcr.io/${{ github.repository }}/finz-backend:${TAG}|" k8s/finz.yaml
+          sed -i "s|image: ghcr.io/.*/finz-frontend:.*|image: ghcr.io/${{ github.repository }}/finz-frontend:${TAG}|" k8s/finz.yaml
+          grep "image: ghcr" k8s/finz.yaml
+
+      - name: Commit and push manifest update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/finz.yaml
+          git diff --cached --quiet || git commit -m "ci: update images to ${{ steps.sha.outputs.short }} [skip ci]"
+          git push
