@@ -99,7 +99,7 @@ spec:
           command: ["sh", "-c", "until nc -z finz-db 5432; do echo waiting for db; sleep 3; done"]
       containers:
         - name: backend
-          image: ghcr.io/greatmindgg-commits/finz-app/finz-backend:latest
+          image: ghcr.io/greatmindgg-commits/finz-app/finz-backend:1802bff
           ports: [{ containerPort: 5000 }]
           env:
             - name: PORT
@@ -147,7 +147,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/greatmindgg-commits/finz-app/finz-frontend:latest
+          image: ghcr.io/greatmindgg-commits/finz-app/finz-frontend:1802bff
           ports: [{ containerPort: 8080 }]
           readinessProbe:
             httpGet: { path: /, port: 8080 }
